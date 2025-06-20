@@ -24,7 +24,7 @@ Slackアプリでオフィスでのランチマッチングを簡単にするシ
 - **Google Apps Script (GAS)**: バックエンド処理
 - **Google Spreadsheet**: データ保存
 - **Slack API**: アプリ連携
-- **Deno**: 開発環境・ビルドツール
+- **Node.js**: 開発環境・ビルドツール
 - **TypeScript**: 型安全な開発
 
 ## 📋 要件
@@ -40,21 +40,25 @@ Slackアプリでオフィスでのランチマッチングを簡単にするシ
 - Slack Bot Token
 - Google Apps Script実行権限
 - Google Spreadsheet編集権限
-- Deno 1.35+
+- Node.js 18+
 
 ## 🚀 セットアップ
 
 ### 1. 開発環境準備
 ```bash
-# Denoのインストール（macOS）
-brew install deno
+# Node.jsのインストール（macOS）
+brew install node
 
 # プロジェクトのクローン
 git clone <repository-url>
 cd lunch-launcher
 
-# 依存関係の確認
-deno --version
+# 依存関係のインストール
+npm install
+
+# バージョン確認
+node --version
+npm --version
 ```
 
 ### 2. Slack App作成
@@ -95,22 +99,22 @@ clasp create --type standalone --title "Lunch Launcher"
 ### 開発コマンド
 ```bash
 # コードのフォーマット
-deno task fmt
+npm run format
 
 # リントチェック
-deno task lint
+npm run lint
 
 # 型チェック
-deno task check
+npm run type-check
 
 # ビルド
-deno task build
+npm run build
 
 # デプロイ
-deno task deploy
+npm run deploy
 
 # 開発モード（ウォッチ）
-deno task dev
+npm run watch
 ```
 
 ### スラッシュコマンド
