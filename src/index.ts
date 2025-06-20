@@ -4,41 +4,43 @@
  */
 
 // Global variables for Google Apps Script
-declare global {
-  const Logger: {
-    log(message: string): void;
-  };
-  const SpreadsheetApp: {
-    openById(id: string): GoogleAppsScript.Spreadsheet.Spreadsheet;
-  };
-  const PropertiesService: {
-    getScriptProperties(): GoogleAppsScript.Properties.Properties;
-  };
-  const UrlFetchApp: {
-    fetch(url: string, options?: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions): GoogleAppsScript.URL_Fetch.HTTPResponse;
-  };
-  const Utilities: {
-    newBlob(data: string, mimeType?: string): GoogleAppsScript.Base.Blob;
-    jsonParse(json: string): unknown;
-    jsonStringify(obj: unknown): string;
-  };
-}
+declare const Logger: {
+  log(message: string): void;
+};
+declare const SpreadsheetApp: {
+  openById(id: string): GoogleAppsScript.Spreadsheet.Spreadsheet;
+};
+declare const PropertiesService: {
+  getScriptProperties(): GoogleAppsScript.Properties.Properties;
+};
+declare const UrlFetchApp: {
+  fetch(url: string, options?: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions): GoogleAppsScript.URL_Fetch.HTTPResponse;
+};
+declare const Utilities: {
+  newBlob(data: string, mimeType?: string): GoogleAppsScript.Base.Blob;
+  jsonParse(json: string): unknown;
+  jsonStringify(obj: unknown): string;
+};
+declare const ContentService: {
+  createTextOutput(content: string, mimeType?: string): GoogleAppsScript.Content.TextOutput;
+};
 
-// Types
-interface LunchPreference {
-  userId: string;
-  username: string;
-  timeSlots: string[];
-  lunchPreferences?: string[];
-  createdAt: Date;
-}
+// Types for future implementation
+// TODO: These interfaces will be used when implementing the full lunch matching system
+// interface LunchPreference {
+//   userId: string;
+//   username: string;
+//   timeSlots: string[];
+//   lunchPreferences?: string[];
+//   createdAt: Date;
+// }
 
-interface LunchMatch {
-  matchId: string;
-  userIds: string[];
-  timeSlot: string;
-  createdAt: Date;
-}
+// interface LunchMatch {
+//   matchId: string;
+//   userIds: string[];
+//   timeSlot: string;
+//   createdAt: Date;
+// }
 
 // Main function for Slack slash command
 function doPost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.Content.TextOutput {
@@ -47,20 +49,22 @@ function doPost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.Content.Tex
 
     switch (payload.type) {
       case 'url_verification':
-        return ContentService.createTextOutput(payload.challenge);
+        return ContentService.createTextOutput(payload.challenge || '');
 
       case 'event_callback':
-        handleSlackEvent(payload.event);
+        if (payload.event) {
+          handleSlackEvent(payload.event);
+        }
         break;
 
       default:
-        Logger.log(`Unknown payload type: ${payload.type}`);
+        Logger.log(`Unknown payload type: ${String(payload.type)}`);
     }
 
     return ContentService.createTextOutput('OK');
   } catch (error) {
-    Logger.log(`Error in doPost: ${error}`);
-    return ContentService.createTextOutput('Error', 500);
+    Logger.log(`Error in doPost: ${String(error)}`);
+    return ContentService.createTextOutput('Error');
   }
 }
 
@@ -68,15 +72,23 @@ function doPost(e: GoogleAppsScript.Events.DoPost): GoogleAppsScript.Content.Tex
 function handleSlackEvent(event: SlackEvent): void {
   switch (event.type) {
     case 'app_mention':
-      handleAppMention(event);
+      if (event.channel && event.user && event.text) {
+        handleAppMention({
+          type: 'app_mention',
+          channel: event.channel,
+          user: event.user,
+          text: event.text
+        });
+      }
       break;
 
     case 'interactive_message':
-      handleInteractiveMessage(event);
+      // TODO: Implement interactive message handling
+      Logger.log('Interactive message received');
       break;
 
     default:
-      Logger.log(`Unhandled event type: ${event.type}`);
+      Logger.log(`Unhandled event type: ${String(event.type)}`);
   }
 }
 
@@ -85,12 +97,12 @@ function handleAppMention(event: SlackAppMentionEvent): void {
   const message = event.text.toLowerCase();
 
   if (message.includes('lunch') || message.includes('ランチ')) {
-    showLunchTimeSelection(event.channel, event.user);
+    showLunchTimeSelection(event.channel);
   }
 }
 
 // Show lunch time selection modal
-function showLunchTimeSelection(channel: string, userId: string): void {
+function showLunchTimeSelection(channel: string): void {
   const timeSlots = [
     '11:00', '11:30', '12:00', '12:30',
     '13:00', '13:30', '14:00', '14:30', '15:00'
@@ -133,7 +145,7 @@ function postMessage(channel: string, blocks: unknown[]): void {
   };
 
   const options: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions = {
-    method: 'POST',
+    method: 'post',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
